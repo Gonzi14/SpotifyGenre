@@ -4,8 +4,8 @@ import json
 import spotipy
 
 urlPlaylist = 'https://api.spotify.com/v1/users/gaandrade117/playlists'
-tokenCreatePlaylist = 'BQAw5CyOjZsCTRcWdGlkGkmxRRlqe5JpIw1CENpkkalj4zzmPIuTBJeBNKPDadlocqwDuYm6STbcOwh4pr_B6P_1vUFffJlTWx31jlXwtgn7greJ2EROnDWs0LVDtKOmlMpFQE3wIm2s_l9cLEw9EPPuo9JqEZ9a9j3h52dryoWO15QJ5YcXtnqo4t3vsetHyNa3XaCKGGaW9CxHaxnNc_mlTsV_Cf4tAwcDjvLSxw6QaGo'
-tokenReadTracks = 'BQA3jWilSFy8cvM5Hgl66xszUm6P7Ej4CTkkgYkohS-RURt7VPuxXa48_EHhl4XMq2MyOkW6EF8oMZBNykWcD3WDKcUtKj7xk0pcl_SHTh-uK_5505mHrezM9VSpz6owj9Vk53zH-i4Dx_BInwRHBQ7yRHrXzKu9nsf1KXSQtyWohHdBo6W6WaFlRHF-a0w'
+tokenCreatePlaylist = ''
+tokenReadTracks = ''
 urlTracks = 'https://api.spotify.com/v1/me/tracks'
 
 def getGenreArtists(idsArtists):
