@@ -4,50 +4,74 @@ import json
 import spotipy
 
 urlPlaylist = 'https://api.spotify.com/v1/users/gaandrade117/playlists'
-tokenCreatePlaylist = 'BQAw5CyOjZsCTRcWdGlkGkmxRRlqe5JpIw1CENpkkalj4zzmPIuTBJeBNKPDadlocqwDuYm6STbcOwh4pr_B6P_1vUFffJlTWx31jlXwtgn7greJ2EROnDWs0LVDtKOmlMpFQE3wIm2s_l9cLEw9EPPuo9JqEZ9a9j3h52dryoWO15QJ5YcXtnqo4t3vsetHyNa3XaCKGGaW9CxHaxnNc_mlTsV_Cf4tAwcDjvLSxw6QaGo'
-tokenReadTracks = 'BQA3jWilSFy8cvM5Hgl66xszUm6P7Ej4CTkkgYkohS-RURt7VPuxXa48_EHhl4XMq2MyOkW6EF8oMZBNykWcD3WDKcUtKj7xk0pcl_SHTh-uK_5505mHrezM9VSpz6owj9Vk53zH-i4Dx_BInwRHBQ7yRHrXzKu9nsf1KXSQtyWohHdBo6W6WaFlRHF-a0w'
+tokenCreatePlaylist = ''
+tokenReadTracks = ''
 urlTracks = 'https://api.spotify.com/v1/me/tracks'
+myID= "43e2c4f5542f44ba99cff85ab3f149bb"
 
-def getGenreArtists(idsArtists):
+def getGenreArtists(songs):
     # Se busca los generos de los artistas
     allArtistsjson = {}
     genres = []
-    for ids in idsArtists:
+    for ids in songs:
+        print(ids['artistID'])
         sp = spotipy.Spotify(auth=tokenReadTracks)
-        sp = sp.artist(ids)
+        sp = sp.artist(ids['artistID'])
         genres.append(sp['genres'])
-        allArtistsjson[ids] = sp
+        #allArtistsjson[ids] = sp
     # Por cada cancion se agrega los generos a una lista
-    print(genres)
+    allgenre = []
+    for item in genres:
+        # Elimina las listas de generos dentro de los generos
+        if isinstance(item, list):
+            for item2 in item:
+                allgenre.append(item2)
+        else:
+            allgenre.append(item)
+    cleanGenre = list(set(allgenre))
+    # Elimina la repeticion de generos 
+    print(cleanGenre)
+    createPlaylist(cleanGenre)
     # Se guarda todos los artistas que hay
     with open(f'artistas.json', "w") as jsonFile:
         jsonFile.write(json.dumps(allArtistsjson))
 
 def getTracks():
+    songs = []
     # Busca todas las canciones que hay en los me gusta del usuario
-    sp = spotipy.Spotify(auth=tokenReadTracks)
-    sp = sp.current_user_saved_tracks(limit=10, offset=0)['items']
-    ids = []
-    idsArtists= []
-    for song in range(len(sp)):
-        # Por cada cancion que hay agrega el id de la misma y de su artista a dos listas diferentes
-        ids.append(sp[song]['track']['id'])
-        idsArtists.append(sp[song]['track']['artists'][0]['id'])
-    getGenreArtists(idsArtists)
-    # Guarda la data de todas las canciones
+    for times in range(1):
+        #22
+        try:
+            sp = spotipy.Spotify(auth=tokenReadTracks)
+            sp = sp.current_user_saved_tracks(limit=10, offset=times*50)['items']
+    
+            for song in range(len(sp)):
+                # Por cada cancion que hay agrega el id de la misma y de su artista a una lista
+                songs.append({ 'songID': sp[song]['track']['id'], 'artistID': sp[song]['track']['artists'][0]['id']})
+        except:
+            print("limite")
     with open(f'songs.json', "w") as jsonFile:
-        jsonFile.write(json.dumps(sp))
 
-def createPlaylist():
+        jsonFile.write(json.dumps(songs))
+    print(songs)
+    getGenreArtists(songs)
+    # Guarda la data de todas las canciones
+    
+
+def createPlaylist(genres):
     # Crea una playlist
-    response = requests.post(
-        urlPlaylist,
-        headers= {"Authorization": f"Bearer {tokenCreatePlaylist}"},
-        json= {"name": "Genero",
-            "public": False}
-    )
-    jsonResp = response.json()
-    print(jsonResp)
+    for genre in genres:
+        response = requests.post(
+            urlPlaylist,
+            headers= {"Authorization": f"Bearer {tokenCreatePlaylist}"},
+            json= {"name": genre,
+                "public": False}
+        )
+        jsonResp = response.json()
+        id = jsonResp['id']
+        sp = spotipy.Spotify(auth=tokenCreatePlaylist)
+        sp = sp.user_playlist_unfollow(myID, id)
+    
 
 
 getTracks()
