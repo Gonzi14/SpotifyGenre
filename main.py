@@ -4,9 +4,12 @@ import requests
 import json
 import spotipy
 
-tokenCreatePlaylist = 'BQB5luf2U0XfDFS2eMbxW9tPFwIUIsY4WpQCwb-fDx5qRt6QKygnKpDUEEZXUpPpWW9Nxu7Bu7nj1MoD1FxuInm4KCm2nuBTNmBNDMC_OOuXMyeD9zJq0O-6ZNYqUoaDUpLmzFaCalzYYMj2xdaWUzLZJoPF0RqlFa1KSLFFZQ8G51Rd2FGwArjrZp-3aQH8fCR3Vj03IdP1p95WDGkvf0q864Kt4yJTTjLnf5Z1cx2MriE'
-tokenReadTracks= 'BQCLQIiUeQsICea1SV9LTR643JwxRNS2B8tWC6tKRpxgVwHjndEuzAIl0ysfBcjyfsbvx42MselES2d-MSSJBUvZYzMmKGZn3mwGCbl219nSgmccT25Od5-alWjMy3py3zptqwfwMqaNwvVD39NgLKEDI_0HuDu7vLHUAVcRngKSgFYEET7Vzmb1eIWMeJ4'
+
+tokenCreatePlaylist = 'BQD008kusU3v9A3L_agMvma-W4pqe7GHWeVUhgP4PxMjTRLMuUu1EsH4dJvO3upFxQXqOO6DdruC27ZIetcP9OIpNzCetknTYt-tQu7T28YkHKy670_C80faJ_0wr7M2B_fpM0zceBgbVJi7-ZUl9je5r_Y3zW3IZJvHcnc8la0LeGJEe5Ml8Ssyxjbkr5ON89z50LliEOQTuBzw0xCS9yqSVX69gUDQjDwJ0xJ0rwgeXuI'
+tokenReadTracks= 'BQDztkNZ5kLEY9G56uOXTBmLKURjV3SxKa_gSirYV_SyBtJ0t93LcHsvIvN5hyLaMwSQLMDLg_RkcASPU5fLyQsxTxNCrTDx3MoxCKHyDkP9rnKqORo5d-vQS11D3haxeD9Hs7akuczhnRDXG7WBpf1DRuDs73ZxlL3fReWvfeEK5kdddYwChT7u45VlVGA'
+#tokenGetGenre = 'BQB4yGdTD2hLzs1jpqW0x4LWXyRHaQ7LARgyswtddlbMN6FEBBlirzjLmUtPED_3P0UkhV8-G52OWXgMFWb_Bi76gV00z-wMZ7O_QGgK9ZY-rEAnAeYpa9Wp_A1pxuoUCveV6gdl9WJGLB2l8Yp3vhV8IvYETdDQLt1LYuar6xPvfM8CvA'
 myID= ""
+#token = spotipy.util.prompt_for_user_token("gaandrade117", scope="user-library-read playlist-modify-public")
 genres = []
 
 def getGenreArtists(idArtist):
@@ -212,7 +215,8 @@ def deletePlaylist(data):
         print("eliminando: " + playList['name'])
         sp = spotipy.Spotify(auth=tokenCreatePlaylist)
         sp = sp.user_playlist_unfollow(myID, playList['id'])
-    
+
 getTracks(True)
 # True si se quiere hacer por decada
 # False si se quiere hacer por genero
+
