@@ -8,14 +8,11 @@ import pandas as pd
 
 
 tokenCreatePlaylist = 'BQDurTFNTubZw-MoiVMiJGBWnsYeXNqWCethXjFxJc1wIfM97EpaSr_g0ZzJRC_SFrCPJTcwCltOm9PnYAKaOGsc5MfLkB0RHxxSk6cR-V0oDH8OpN8QgtO7PdVCEQn0SgzRnVaQxqRkZk6wzisn_asyWWQpRhVMb6BatgmkBym4UDYXEOnr31n7pTBZ8mRTA6Hh-5D-UcATZuBxMM4CXzMQ0jFGe_VxUD-acnQhOCVImQk'
-tokenReadTracks= 'BQBEic68wGM-dXlu_0GnAo7pZMN4ivK7i_51wnJOX_I78Q9Mpn9fy_k3-Af_40ii6gmVyETgsuTGpnbDX4LsB0x428krEUVvSAJnh4Mdow-QwStJDLH26aftpIXv7hOnpZvJkli8ZOocj3bqd-6ghQVmHHCHef8B6cscuQlDP7L-RJiwrocGPeCZRm0QYz0'
+tokenReadTracks= 'BQA4iX3ATkWs5M6iNd40GRcE2SVfYaTij7ph9JHDqI8SLQg6Q29N0R_aZ25TIF7qMGWgInjq3cFeLLz1FhhvLKz83KGATEWQy6KZtTVqvlgRTyvPuRWpPqKl76I66R0u2zBFxqXxgRsmBl1LOp2aCcQ7AnInjj8w-AAXhk99d9aE0L-oGnE3zV8cI200fGg'
 genres = []
-myID = sys.argv[1]
-myIDsecret = sys.argv[2]
-era = sys.argv[3] in (True, False)
-rounds =ceil(int(sys.argv[4])/50)
-client_credentials_manager = SpotifyClientCredentials(client_id=myID, client_secret=myIDsecret)
-sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
+myID = ""
+era = sys.argv[1] in (True, False)
+rounds =ceil(int(sys.argv[2])/50)
 
 def getGenreArtists(idArtist):
     # Se busca los generos de los artistas
@@ -48,6 +45,7 @@ def cleanGenres(genres):
 def getTracks(era, rounds):    
     songs = []
     eras = []
+    num = 0
     # Busca todas las canciones que hay en los me gusta del usuario
     for times in range(rounds):
         
@@ -62,15 +60,16 @@ def getTracks(era, rounds):
             # El offset es el salto que hace
             # En este caso, le digo q haga un salto de 50xtimes, asi puedo agarrar todas las canciones
             for song in range(len(sp)):
+                num=num+1
             # Por cada cancion que hay agrega el id de la misma, de su artista a una lista
             # Los generos que tiene ese artista y el año del disco
-                songs.append({ 'songID': sp[song]['track']['id'], 'artistID': sp[song]['track']['artists'][0]['id'],
+                songs.append({"songName":  sp[song]['track']['name'],'artistName': sp[song]['track']['artists'][0]['name'],'songID': sp[song]['track']['id'], 'artistID': sp[song]['track']['artists'][0]['id'],
                 # El 'year' se consigue agarrando el 'release_date' del album (2022-05-05), para despues eliminar los - y conseguir unicamente el año
                 # Luego con el len(), se consigue agarrar el anteultimo digitos del año (2) y se le suma 0, para asi quedar como una decada
                 'year': ((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0"
-                , 'genres': getGenreArtists(sp[song]['track']['artists'][0]['id']), "songName":  sp[song]['track']['name']})
+                , 'genres': getGenreArtists(sp[song]['track']['artists'][0]['id'])})
                 eras.append(((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0")
-                print("Procesando: " + sp[song]['track']['name'])
+                print(str(num) + ": Procesando: " + sp[song]['track']['name'])
         except:
             print("limite")
     dfSongs = pd.DataFrame(songs)
@@ -88,11 +87,10 @@ def getTracks(era, rounds):
     if era == False:
         # Si se esta haciendo playlists de generos
         createPlaylist(cleanGenres(genres))
-        # Se envia a que se limpie la lista de generos y que se creen las playlists
-        addSongs(era, songs)
     else:
+        # Se envia a que se limpie la lista de generos y que se creen las playlists
         createPlaylist(eras)
-        addSongs(era, songs)
+    #addSongs(era, songs)
 
 def createNoGenrePlaylist():
     file = open('myPlaylists.json', encoding= "utf8")
@@ -156,7 +154,7 @@ def createPlaylist(genres):
                 sp = sp.user_playlist_create('gaandrade117' ,genre, public=True)
                 # Se guarda la informacion de la nueva creada playlist
                 playlistData.append({'id': sp['id'], 'name': sp['name']})
-                print("se hizo " + sp['name'])
+                print("se hizo la playlist: " + sp['name'])
                 break
             else:
                 # Si se termino y se encontro, sigue con el siguiente genero
@@ -174,9 +172,11 @@ def addSongs(era, songs):
     # Agrega canciones a las playlists
     file = open('myPlaylists.json', encoding= "utf8")
     data = json.load(file)
+    num = 0
     if era == False:
         # Si se hace por genero
         for song in songs:
+            num=num+1
             if not song['genres']:
                 
                 exist = False
@@ -188,7 +188,7 @@ def addSongs(era, songs):
                     # Se fija en todas las canciones de la playlist a ver si ya esta
                         for alreadyExistingSong in range(len(sp)):
                             # Por cada 100 canciones que ya existe, se compara para ver si es la misma
-                            print("se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: NoGenre")
+                            print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: NoGenre")
                             if sp[alreadyExistingSong]['track']['id'] == song['songID']:
                                 print("ya existe: " + song['songName'])
                                 # Si ya existe, entonces se termina el while y no se agrega
@@ -218,7 +218,7 @@ def addSongs(era, songs):
                             # Se fija en todas las canciones de la playlist a ver si ya esta
                                 for alreadyExistingSong in range(len(sp)):
                                     # Por cada 100 canciones que ya existen, se compara para ver si es la misma
-                                    print("se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + genre)
+                                    print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + genre)
                                     if sp[alreadyExistingSong]['track']['id'] == song['songID']:
                                         print("ya existe: " + song['songName'])
                                         # Si ya existe, entonces se termina el while y no se agrega
@@ -245,7 +245,7 @@ def addSongs(era, songs):
     else:
         # En el caso que sea por decada, en vez de por genero
         for song in songs:
-
+                num=num+1
             # Por cada cancion que hay fijarse su epoca y buscar la playlist para
             # esa epoca, despues averiguar si ya esta dentro de la playlist, si no, agregarse
                 for playlist in data:
@@ -259,7 +259,7 @@ def addSongs(era, songs):
                                 sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
                             # Se fija en 100 canciones en la playlist a ver si ya esta
                                 for alreadyExistingSong in range(len(sp)):
-                                    print("se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + song['year'])
+                                    print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + song['year'])
                                     if sp[alreadyExistingSong]['track']['id'] == song['songID']:
                                         print("ya existe: " + song['songName'])
                                         # Si ya existe, entonces se termina el while y no se agrega
