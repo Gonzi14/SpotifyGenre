@@ -1,4 +1,4 @@
 # SpotifyGenre
-Crea automaticamente playlists de  todos los generos y guarda todas tus canciones favoritas en ellas
+Programa el cual te genera playlists de generos automaticamente y guarda las canciones de esos generos en ellas.
 
 Las Key APIs que se necesitan se pueden conseguir en https://developer.spotify.com
