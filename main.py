@@ -1,18 +1,20 @@
 import json
 from traceback import print_tb
+from unicodedata import name
 import spotipy
 import sys
 from math import ceil
 from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
+from datetime import date
 
 
-tokenCreatePlaylist = 'BQDurTFNTubZw-MoiVMiJGBWnsYeXNqWCethXjFxJc1wIfM97EpaSr_g0ZzJRC_SFrCPJTcwCltOm9PnYAKaOGsc5MfLkB0RHxxSk6cR-V0oDH8OpN8QgtO7PdVCEQn0SgzRnVaQxqRkZk6wzisn_asyWWQpRhVMb6BatgmkBym4UDYXEOnr31n7pTBZ8mRTA6Hh-5D-UcATZuBxMM4CXzMQ0jFGe_VxUD-acnQhOCVImQk'
-tokenReadTracks= 'BQA4iX3ATkWs5M6iNd40GRcE2SVfYaTij7ph9JHDqI8SLQg6Q29N0R_aZ25TIF7qMGWgInjq3cFeLLz1FhhvLKz83KGATEWQy6KZtTVqvlgRTyvPuRWpPqKl76I66R0u2zBFxqXxgRsmBl1LOp2aCcQ7AnInjj8w-AAXhk99d9aE0L-oGnE3zV8cI200fGg'
+tokenCreatePlaylist = 'BQB3xeOfoSz-0FhHz9qoaQ8vEsTFnX9Y1qnP0sspcCK9hyjjgV-IOtPrnz4vnROrlW_l4h5X3zrpWAGi2wHfwhnn3NaRZZUgtCJbvzxTo9XMOltseW8x4uowrBg5ViK0yso8k45K9f6fBhCxQZHZwTAAnxcH5gCq3TmSHGWhpMwo6Y6jwTAJbnFbnCaruhzU1uQWUaMZFADn8bizOjbHE2xWJ6q4KEerAQAhYAky6nMbY1s'
+tokenReadTracks= 'BQAjULij455w025hQp26baLLYjd0hkgelG4xxbFqSklBzuNm-2TPNsQWhgxui4UItvum2yTRnPFWqjcdl3CjdaWcUXhD0QYR9xjw5GJFlBMbg9vtrISzOngBuJgoAKVC0sfmeGCMpJy2gdU97GwXOBREONFqQFwomHzZJdznv3TSBu56aWSIzgT9I-GwgzU'
+tokenTop = 'BQAsrFhptZrOnt-_lCvEqpqVQdgfloSZPWC5NVtfgTsLMmPXalxamD-nOXJxjoWLa-uqgmRn4wPslDKyyPQiqzzACQuAQ7X6awQsRW3rrWKlTxtnUIzPnXu0bkMDo0wuZ8Jawnwpb4G961Rns5pMpNqjzEZRA_mCo-t3PEBsQSCJ4raf0M3yUXpA8A'
 genres = []
-myID = ""
-era = sys.argv[1] in (True, False)
-rounds =ceil(int(sys.argv[2])/50)
+rounds =ceil(int(sys.argv[1])/50)
+noGenrePlaylist = None
 
 def getGenreArtists(idArtist):
     # Se busca los generos de los artistas
@@ -34,15 +36,12 @@ def cleanGenres(genres):
     cleanGenre = list(set(allgenre))
     dfGenres = pd.DataFrame(cleanGenre)
     dfGenres.to_csv('Genres.csv', index=False)
-    print(dfGenres)
     with open(f'myGenres.json', "w") as jsonFile:
         # Se guarda en un .json todos los generos que hay
         jsonFile.write(json.dumps(cleanGenre))
     return(cleanGenre)
-    
-    
 
-def getTracks(era, rounds):    
+def getTracks(rounds):    
     songs = []
     eras = []
     num = 0
@@ -74,7 +73,6 @@ def getTracks(era, rounds):
             print("limite")
     dfSongs = pd.DataFrame(songs)
     dfSongs.to_csv('Songs.csv', index=False)
-    print(dfSongs)
     with open(f'songs.json', "w") as jsonFile:
         # Se guardan todas las canciones en un .json
         jsonFile.write(json.dumps(songs))
@@ -83,14 +81,9 @@ def getTracks(era, rounds):
         jsonFile.write(json.dumps(eras))
     dfEras = pd.DataFrame(eras)
     dfEras.to_csv('Eras.csv', index=False)
-    print(dfEras)
-    if era == False:
-        # Si se esta haciendo playlists de generos
-        createPlaylist(cleanGenres(genres))
-    else:
-        # Se envia a que se limpie la lista de generos y que se creen las playlists
-        createPlaylist(eras)
-    #addSongs(era, songs)
+    createPlaylist(cleanGenres(genres))
+    createPlaylist(eras)
+    addSongs(songs, noGenrePlaylist)
 
 def createNoGenrePlaylist():
     file = open('myPlaylists.json', encoding= "utf8")
@@ -106,7 +99,7 @@ def createNoGenrePlaylist():
                     # Si lo es termina el while
                     
                     foundIt = True
-                    return playlist['id']
+                    return playlist
                 else:
                     # Si no lo es, sigue pasando el while
                     pass
@@ -123,8 +116,7 @@ def createNoGenrePlaylist():
                 with open(f'myPlaylists.json', "w") as jsonFile:
                     # Se guarda la actualizada informacion de las playlists
                     jsonFile.write(json.dumps(playlistData))
-                return(sp['id'])
-
+                return sp
 
 def createPlaylist(genres):
     # Se crean las playlists de acuerdo a la lista de generos que se le manda
@@ -161,125 +153,67 @@ def createPlaylist(genres):
                 pass
     dfPlaylists = pd.DataFrame(playlistData)
     dfPlaylists.to_csv('Playlists.csv', index=False)
-    print(dfPlaylists)
     with open(f'myPlaylists.json', "w") as jsonFile:
         # Se guarda la actualizada informacion de las playlists
         jsonFile.write(json.dumps(playlistData))
-    return(playlistData)
 
-
-def addSongs(era, songs):
+def addSongs(songs, noGenrePlaylist):
     # Agrega canciones a las playlists
     file = open('myPlaylists.json', encoding= "utf8")
     data = json.load(file)
     num = 0
-    if era == False:
-        # Si se hace por genero
-        for song in songs:
-            num=num+1
-            if not song['genres']:
+    for song in songs:
+        # Por cada cancion
+        num=num+1
+        if not song['genres']:
+            # Si no tiene generos
+            if noGenrePlaylist == None:
+                # Se fija si ya esta guardada la info de la playlist sin genero
+                noGenrePlaylist = createNoGenrePlaylist()
                 
-                exist = False
-                while exist == False:
-                    for times in range(10):
-                        # Se hace 1000 veces que son la cantidad maxima posible de canciones en una playlist
-                        sp = spotipy.Spotify(auth=tokenCreatePlaylist)
-                        sp = sp.playlist_items(noGenreID, limit= 100, offset= times * 100 )['items']
-                    # Se fija en todas las canciones de la playlist a ver si ya esta
-                        for alreadyExistingSong in range(len(sp)):
-                            # Por cada 100 canciones que ya existe, se compara para ver si es la misma
-                            print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: NoGenre")
-                            if sp[alreadyExistingSong]['track']['id'] == song['songID']:
-                                print("ya existe: " + song['songName'])
-                                # Si ya existe, entonces se termina el while y no se agrega
-                                exist = True
-                                break
-                    if exist == False:
-                    # Si la cancion no tiene genero entonces se agrega a una playlist especial
-                        listaInnecesaria = []
-                        sID = song['songID']
-                        listaInnecesaria.append(sID)
-                        sp = spotipy.Spotify(auth=tokenCreatePlaylist)
-                        sp = sp.playlist_add_items(noGenreID, listaInnecesaria)
-                        print("Se agrego: " + song['songName'] + " a la lista random")
-            # Por cada cancion que hay fijarse sus generos y buscar la playlist para
-            # ese genero, despues averiguar si ya esta dentro de la playlist, si no, agregarse
+            prueba(song, noGenrePlaylist, num)
+        for playlist in data:
             for genre in song['genres']:
-                # Por cada genero en la cancion
-                for playlist in data:
-                    # Por cada playlist en la lista de playlists
-                    if genre == playlist['name']:
-                        # Si hay una playlist con el nombre del genero
-                        exist = False
-                        while exist == False:
-                            for times in range(10):
-                                sp = spotipy.Spotify(auth=tokenCreatePlaylist)
-                                sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
-                            # Se fija en todas las canciones de la playlist a ver si ya esta
-                                for alreadyExistingSong in range(len(sp)):
-                                    # Por cada 100 canciones que ya existen, se compara para ver si es la misma
-                                    print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + genre)
-                                    if sp[alreadyExistingSong]['track']['id'] == song['songID']:
-                                        print("ya existe: " + song['songName'])
-                                        # Si ya existe, entonces se termina el while y no se agrega
-                                        exist = True
-                                        break
-                            if exist == False:
-                                    # Si se termino el for y no se encontro, se agrega la cancion
-                                    try:
-                                        # Intenta agregar la cancion a la playlist
-                                        listaInnecesaria = []
-                                        pID = playlist['id']
-                                        sID = song['songID']
-                                        listaInnecesaria.append(sID)
-                                        # Se tiene que hacer una lista, debido a que asi lo pide la API
-                                        # En teoria se podria enviar varios items (canciones) a la vez, 
-                                        # pero en este programa solo se manda de a uno
-                                        sp = spotipy.Spotify(auth=tokenCreatePlaylist)
-                                        sp = sp.playlist_add_items(pID, listaInnecesaria)
-                                        print("Se agrego: " + song['songName'] + " a " + playlist['name'])
-                                        exist = True
-                                    except:
-                                        print("No se pudo agregar: " + song['songName'] + " a " + playlist['name'])
-                                        exist = True
-    else:
-        # En el caso que sea por decada, en vez de por genero
-        for song in songs:
-                num=num+1
-            # Por cada cancion que hay fijarse su epoca y buscar la playlist para
-            # esa epoca, despues averiguar si ya esta dentro de la playlist, si no, agregarse
-                for playlist in data:
-                    # Por cada playlist en la lista de playlists
-                    if song['year'] == playlist['name']:
-                        # Si hay una playlist con el nombre del año
-                        exist = False
-                        while exist == False:
-                            for times in range(10):
-                                sp = spotipy.Spotify(auth=tokenCreatePlaylist)
-                                sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
-                            # Se fija en 100 canciones en la playlist a ver si ya esta
-                                for alreadyExistingSong in range(len(sp)):
-                                    print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + song['year'])
-                                    if sp[alreadyExistingSong]['track']['id'] == song['songID']:
-                                        print("ya existe: " + song['songName'])
-                                        # Si ya existe, entonces se termina el while y no se agrega
-                                        exist = True
-                                        break
-                            if exist == False:
-                                    # Si se termino el for y no se encontro, se agrega la cancion
-                                    try:
+                if genre == playlist['name']:
+                    # Si hay una playlist con el nombre del genero
+                    prueba(song, playlist, num)
+            if song['year'] == playlist['name']:
+                # Si hay una playlist con el nombre del año
+                prueba(song, playlist, num)
 
-                                        listaInnecesaria = []
-                                        pID = playlist['id']
-                                        sID = song['songID']
-                                        listaInnecesaria.append(sID)
-                                        sp = spotipy.Spotify(auth=tokenCreatePlaylist)
-                                        sp = sp.playlist_add_items(pID, listaInnecesaria)
-                                        print("Se agrego: " + song['songName'] + " a " + playlist['name'])
-                                        exist = True
-                                    except:
-                                        print("No se pudo agregar: " + song['songName'] + " a " + playlist['name'])
-                                        exist = True
+def prueba(song,playlist, num):
+    exist = False
+    while exist == False:
+        for times in range(3):
+            sp = spotipy.Spotify(auth=tokenCreatePlaylist)
+            sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
+        # Se fija en todas las canciones de la playlist a ver si ya esta
+            for alreadyExistingSong in range(len(sp)):
+                # Por cada 100 canciones que ya existen, se compara para ver si es la misma
+                print(str(num) + "- Se esta comparando " + song['songName'] + " con: " + sp[alreadyExistingSong]['track']['name'] + " que ya esta adentro en: " + playlist['name'])
+                if sp[alreadyExistingSong]['track']['id'] == song['songID']:
+                    print("ya existe: " + song['songName'] + "en " + playlist['name'])
+                    # Si ya existe, entonces se termina el while y no se agrega
+                    exist = True
+                    break
+        if exist == False:
+                # Si se termino el for y no se encontro, se agrega la cancion
+                try:
+                    # Intenta agregar la cancion a la playlist
+                    listaInnecesaria = []
+                    pID = playlist['id']
+                    sID = song['songID']
+                    listaInnecesaria.append(sID)
+                    # Se tiene que hacer una lista, debido a que asi lo pide la API
+                    # En teoria se podria enviar varios items (canciones) a la vez, 
+                    # pero en este programa solo se manda de a uno
+                    sp = spotipy.Spotify(auth=tokenCreatePlaylist)
+                    sp = sp.playlist_add_items(pID, listaInnecesaria)
+                    print("Se agrego: " + song['songName'] + " a " + playlist['name'])
+                    exist = True
+                except:
+                    print("No se pudo agregar: " + song['songName'] + " a " + playlist['name'])
+                    exist = True
 
 def deletePlaylist(data):
     # En el caso de estar testeando y querer eliminar varias playlists a la vez
@@ -289,8 +223,21 @@ def deletePlaylist(data):
         sp = spotipy.Spotify(auth=tokenCreatePlaylist)
         sp = sp.user_playlist_unfollow(myID, playList['id'])
 
+def createTopPlaylist():
+    fecha = date.today()
+    types = ['long_term', 'medium_term', 'short_term']
+    for Moment in types:
+        namePlaylist = (str(fecha) + " " + Moment)
+        lista = []
+        sp = spotipy.Spotify(auth=tokenTop)
+        sp = sp.current_user_top_tracks(20, 0, Moment)['items']
+        for song in range(len(sp)):
+            lista.append({"songName":  sp[song]['name'],'artistName': sp[song]['artists'][0]['name'],'songID': sp[song]['id'], 'artistID': sp[song]['artists'][0]['id'], 'year': ((sp[song]['album']['release_date']).split("-")[0])[len(((sp[song]['album']['release_date']).split("-")[0]))//2] + "0", 'genres': [Moment]})
+        with open(f'pruebaL.json', "w") as jsonFile:
+            # Se guarda en un .json todos los generos que hay
+            jsonFile.write(json.dumps(lista))
+        createPlaylist([namePlaylist])
+        addSongs(lista, noGenrePlaylist)
 
-# True si se quiere hacer por decada
-# False si se quiere hacer por genero
-noGenreID = createNoGenrePlaylist()
-getTracks(era, rounds)
+getTracks(rounds)
+#createTopPlaylist()
