@@ -1,3 +1,4 @@
+from copyreg import add_extension
 import json
 from traceback import print_tb
 from unicodedata import name
@@ -7,14 +8,22 @@ from math import ceil
 from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 from datetime import date
+import matplotlib.pyplot as plt
 
 
-tokenCreatePlaylist = 'BQB3xeOfoSz-0FhHz9qoaQ8vEsTFnX9Y1qnP0sspcCK9hyjjgV-IOtPrnz4vnROrlW_l4h5X3zrpWAGi2wHfwhnn3NaRZZUgtCJbvzxTo9XMOltseW8x4uowrBg5ViK0yso8k45K9f6fBhCxQZHZwTAAnxcH5gCq3TmSHGWhpMwo6Y6jwTAJbnFbnCaruhzU1uQWUaMZFADn8bizOjbHE2xWJ6q4KEerAQAhYAky6nMbY1s'
-tokenReadTracks= 'BQAjULij455w025hQp26baLLYjd0hkgelG4xxbFqSklBzuNm-2TPNsQWhgxui4UItvum2yTRnPFWqjcdl3CjdaWcUXhD0QYR9xjw5GJFlBMbg9vtrISzOngBuJgoAKVC0sfmeGCMpJy2gdU97GwXOBREONFqQFwomHzZJdznv3TSBu56aWSIzgT9I-GwgzU'
+tokenCreatePlaylist = 'BQB_6xYmf_KQGZ_JN0f22HsuMijSDzoXKviUQhstysFvRYtXW4tGygJNQLsMBVwoxOcQ0JsgsULGtZjI4SpBFcsFoq8Yqp6oThm7CvnjFM10-8CYG9lM9lAQplP_auh_7zQGNvyLKrzKA3AEFFFpfNfU97H2Qx6zlpiCbGw7lHvBbdgEkWYgB-7QbQ3nwuxSEJG_KFuZbwJiLbOSiFh-k66P4RV012Q6d0vmUtz3sDOubp0'
+tokenReadTracks= 'BQAMCvKQOuKaDf--GJbrdkPkZf1fgmgFEp37hNdSZWpG01RALc-VdLjsgNQiMCB6tOoY-ziGvsKm4kgI0W9KwpB6a4uR_9jBqMnIvE2obYYqrNsU_RrFLvBZUM-U-wAucjXTvwPWDgUbFulcnG_1d9LS5al3WnFjfpVudv4I82w5zjT6wpe01Nqc7xTwKqM'
 tokenTop = 'BQAsrFhptZrOnt-_lCvEqpqVQdgfloSZPWC5NVtfgTsLMmPXalxamD-nOXJxjoWLa-uqgmRn4wPslDKyyPQiqzzACQuAQ7X6awQsRW3rrWKlTxtnUIzPnXu0bkMDo0wuZ8Jawnwpb4G961Rns5pMpNqjzEZRA_mCo-t3PEBsQSCJ4raf0M3yUXpA8A'
+tokenAudio = 'BQC66eNUs7Wzm6DkIl37n-vthuT8QkfWHQx3e1_WP0gdN_9JPkgNRYgZ43OEV6d9frQeyAvXaXJf1eYVbq_cJT6C_xVvLs9CI8IsqosTYJ0NMR2KNqajCC1zj2kQxvixQYcEMfdar1jdbwp1hhp93Rt1ImtSnuJbBbWby4skvWHXw_cetQ'
 genres = []
 rounds =ceil(int(sys.argv[1])/50)
 noGenrePlaylist = None
+
+def save(item, name):
+    dfitem = pd.DataFrame(item)
+    dfitem.to_csv(f"{name}.csv", index=False)
+    with open(f"{name}.json", "w") as jsonFile:
+        jsonFile.write(json.dumps(item))
 
 def getGenreArtists(idArtist):
     # Se busca los generos de los artistas
@@ -34,11 +43,6 @@ def cleanGenres(genres):
             allgenre.append(item)
     # Luego se agrega todos los generos a una lista
     cleanGenre = list(set(allgenre))
-    dfGenres = pd.DataFrame(cleanGenre)
-    dfGenres.to_csv('Genres.csv', index=False)
-    with open(f'myGenres.json', "w") as jsonFile:
-        # Se guarda en un .json todos los generos que hay
-        jsonFile.write(json.dumps(cleanGenre))
     return(cleanGenre)
 
 def getTracks(rounds):    
@@ -66,24 +70,15 @@ def getTracks(rounds):
                 # El 'year' se consigue agarrando el 'release_date' del album (2022-05-05), para despues eliminar los - y conseguir unicamente el año
                 # Luego con el len(), se consigue agarrar el anteultimo digitos del año (2) y se le suma 0, para asi quedar como una decada
                 'year': ((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0"
-                , 'genres': getGenreArtists(sp[song]['track']['artists'][0]['id'])})
+                , 'genres': getGenreArtists(sp[song]['track']['artists'][0]['id']), 'audio': audio(sp[song]['track']['id'])})
                 eras.append(((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0")
                 print(str(num) + ": Procesando: " + sp[song]['track']['name'])
         except:
             print("limite")
-    dfSongs = pd.DataFrame(songs)
-    dfSongs.to_csv('Songs.csv', index=False)
-    with open(f'songs.json', "w") as jsonFile:
-        # Se guardan todas las canciones en un .json
-        jsonFile.write(json.dumps(songs))
-    with open(f'eras.json', "w") as jsonFile:
-        # Se guardan todas las eras en un .json
-        jsonFile.write(json.dumps(eras))
-    dfEras = pd.DataFrame(eras)
-    dfEras.to_csv('Eras.csv', index=False)
+    save(songs, "songs")
     createPlaylist(cleanGenres(genres))
     createPlaylist(eras)
-    addSongs(songs, noGenrePlaylist)
+    #addSongs(songs, noGenrePlaylist)
 
 def createNoGenrePlaylist():
     file = open('myPlaylists.json', encoding= "utf8")
@@ -110,12 +105,7 @@ def createNoGenrePlaylist():
                 # Se guarda la informacion de la nueva creada playlist
                 playlistData.append({'id': sp['id'], 'name': sp['name']})
                 print("se hizo " + sp['name'])
-                dfPlaylists = pd.DataFrame(playlistData)
-                dfPlaylists.to_csv('Playlists.csv', index=False)
-                print(dfPlaylists)
-                with open(f'myPlaylists.json', "w") as jsonFile:
-                    # Se guarda la actualizada informacion de las playlists
-                    jsonFile.write(json.dumps(playlistData))
+                save(playlistData, "myPlaylists")
                 return sp
 
 def createPlaylist(genres):
@@ -151,11 +141,7 @@ def createPlaylist(genres):
             else:
                 # Si se termino y se encontro, sigue con el siguiente genero
                 pass
-    dfPlaylists = pd.DataFrame(playlistData)
-    dfPlaylists.to_csv('Playlists.csv', index=False)
-    with open(f'myPlaylists.json', "w") as jsonFile:
-        # Se guarda la actualizada informacion de las playlists
-        jsonFile.write(json.dumps(playlistData))
+    save(playlistData, "myPlaylists")
 
 def addSongs(songs, noGenrePlaylist):
     # Agrega canciones a las playlists
@@ -180,6 +166,8 @@ def addSongs(songs, noGenrePlaylist):
             if song['year'] == playlist['name']:
                 # Si hay una playlist con el nombre del año
                 prueba(song, playlist, num)
+    df = pd.DataFrame(data)
+    bar(df)
 
 def prueba(song,playlist, num):
     exist = False
@@ -234,10 +222,62 @@ def createTopPlaylist():
         for song in range(len(sp)):
             lista.append({"songName":  sp[song]['name'],'artistName': sp[song]['artists'][0]['name'],'songID': sp[song]['id'], 'artistID': sp[song]['artists'][0]['id'], 'year': ((sp[song]['album']['release_date']).split("-")[0])[len(((sp[song]['album']['release_date']).split("-")[0]))//2] + "0", 'genres': [Moment]})
         with open(f'pruebaL.json', "w") as jsonFile:
-            # Se guarda en un .json todos los generos que hay
+            # Se guarda en un json todos los generos que hay
             jsonFile.write(json.dumps(lista))
         createPlaylist([namePlaylist])
         addSongs(lista, noGenrePlaylist)
 
-getTracks(rounds)
+def checkNumSongPlaylist():
+    allPlaylists = []
+    file = open('myPlaylists.json', encoding= "utf8")
+    data = json.load(file)
+    for playlist in data:
+        songs = 0
+        for times in range(3):
+            sp = spotipy.Spotify(auth=tokenCreatePlaylist)
+            sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
+            songs = songs + len(sp)
+        allPlaylists.append({'id': playlist['id'], 'name': playlist['name'], 'songs' : songs})
+        print(playlist['name'] + " " + str(songs))
+    save(allPlaylists, "myPlaylists")
+
+def bar(dataBase):
+    plt.style.use('ggplot')   
+    plt.bar(dataBase.name ,dataBase.songs, color='#e36685')
+    plt.subplots_adjust(wspace=0.9, bottom=0.1)
+    # Se crea un grafico tipo bar
+    plt.grid()
+    plt.show()
+
+def audio(id):
+    features = []
+    sp = spotipy.Spotify(auth=tokenAudio)
+    sp = sp.audio_features(id)[0]
+    features.append({'danceability': sp['danceability'], 'energy': sp['energy'], 'key': sp['key'], 'loudness': sp['loudness'], 'speechiness': sp['speechiness'], 'acousticness': sp['acousticness'], 'instrumentalness': sp['instrumentalness'], 'liveness': sp['liveness'], 'valence': sp['valence'], 'tempo': sp['tempo']})
+    return features
+            
+def average():
+    file = open('songs.json', encoding= "utf8")
+    data = json.load(file)
+    list = {'danceability': 0, 'energy': 0, 'key': 0, 'loudness': 0, 'speechiness': 0, 'acousticness': 0, 'instrumentalness': 0, 'liveness': 0, 'valence': 0, 'tempo': 0}
+    for song in data:
+        for item in list:
+            list[item] = list[item] + song['audio'][0][item]
+    for item in list:
+        list[item] = list[item]/len(data)
+    return list
+
+def barSound(dataBase):
+    plt.style.use('ggplot')
+    plt.bar(dataBase.songName , dataBase.audio['energy'], color='#e36685')
+    plt.subplots_adjust(wspace=0.9, bottom=0.1)
+    # Se crea un grafico tipo bar
+    plt.grid()
+    plt.show()
+file = open('Songs.json', encoding= "utf8")
+data = json.load(file)
+df = pd.DataFrame(data)
+barSound(df)
+#getTracks(rounds)
 #createTopPlaylist()
+#checkNumSongPlaylist()
