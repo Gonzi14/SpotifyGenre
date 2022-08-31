@@ -1,4 +1,5 @@
 from copyreg import add_extension
+from importlib.machinery import all_suffixes
 import json
 from traceback import print_tb
 from unicodedata import name
@@ -9,7 +10,9 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import pandas as pd
 from datetime import date
 import matplotlib.pyplot as plt
-
+from pydrive.drive import GoogleDrive
+from pydrive.auth import GoogleAuth
+import os
 
 tokenCreatePlaylist = 'BQClqkmCFck91keN8JjCF3_TA7huLJxg9SZ-W1XO5ddVJ7cP-hQ0pTlfVEvQwZQgzGrJSqVWDgz9SU83Fs2cGrUTUWESWtysmdPOW800L_ThkrJ9kjg-kFzzTCGYL48N40WjzLpppzwPPZvv44KZiiCrUYycaa68w6TANbkpQjuAhAj6IqHnBs5BysN37nIoGf_dm-hnwCrK3fh1lUxRtncwB4dc21Um7uJGpr6uyex-O9c'
 tokenReadTracks= 'BQDblOzQV3qmvMcl6O6J73_dEV2eGlTcJOzlSdFqaLNs5Yd5_r_L29VRv4ct3JDjDJ9zx3AjL-3MGaut8V4MiFWelpyNvst6tXEsRiPHkXnDK2yj37T9hCJc6kg8C6Yl_Vrqedpg-E25P6Ty9SzUEtmgAq39oLiZfcWqW-nninYM6bot5C40HWGXsI979m0'
@@ -73,6 +76,7 @@ def getTracks(rounds):
                 , 'genres': getGenreArtists(sp[song]['track']['artists'][0]['id']),'danceability': audioSong[0], 'energy': audioSong[1], 'key': audioSong[2], 'loudness': audioSong[3], 'speechiness': audioSong[4], 'acousticness': audioSong[5], 'instrumentalness': audioSong[6], 'liveness': audioSong[7], 'valence': audioSong[8], 'tempo': audioSong[9]})
                 eras.append(((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0")
                 print(str(num) + ": Procesando: " + sp[song]['track']['name'])
+                
     save(songs, "songs")
     createPlaylist(cleanGenres(genres))
     createPlaylist(eras)
@@ -212,6 +216,34 @@ def checkNumSongPlaylist():
         print(playlist['name'] + " " + str(songs))
     save(allPlaylists, "myPlaylists")
 
+def checkNumSongartists():
+    listArtists = []
+    artistsNumSongs = []
+    file = open('Songs.json', encoding= "utf8")
+    data = json.load(file)
+    for song in range(len(data)):
+        num = 0
+        artist = {'name': data[song]['artistName'], 'id': data[song]['artistID'],'numSongs': None}
+        if artist not in listArtists:
+            # Si el artista todavia no esta en la lista se lo agrega
+            listArtists.append(artist)
+            # Se agrega a la ista de nunmeros de canciones tambien
+            artistsNumSongs.append({'name': data[song]['artistName'], 'numSongs': 1})
+        else:
+            # Si el artista ya esta,etoces se le quiere decir qe hay una cancion adicional en la cual aparece
+            for alreadyIn in listArtists:
+                # Por cada cancion que ya esta en la lista de artistas
+                if alreadyIn == artist:
+                    # Si se encetra una igualdad, se le agrega una cancion a ese artista
+                    artistsNumSongs[num]['numSongs'] = artistsNumSongs[num]['numSongs'] + 1
+                num = num + 1
+    num = 0
+    for artist in listArtists:
+        #Por cada artista que hay, se le cambia el numero de canciones que tiene, por el correcto
+        artist['numSongs'] = artistsNumSongs[num]['numSongs']
+        num = num + 1
+    save(listArtists, "myArtists")
+
 def audio(id):
     # Averigua los datos sobre el audio de una cancion
     features = []
@@ -234,7 +266,9 @@ def average():
         list[item] = list[item]/len(data)
     return list
 
-def bar(data): 
+def bar(): 
+    file = open('songs.json', encoding= "utf8")
+    data = json.load(file)
     # Hace los graficos de las canciones
     fig, ax = plt.subplots()
     df = pd.DataFrame(data)
@@ -248,8 +282,7 @@ def bar(data):
     plt.show()
 
 #getTracks(rounds)
-file = open('songs.json', encoding= "utf8")
-data = json.load(file)
-bar(data)
+#bar()
 #createTopPlaylist()
 #checkNumSongPlaylist()
+checkNumSongartists()
