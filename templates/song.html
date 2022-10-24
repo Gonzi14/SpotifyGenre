@@ -1,0 +1,55 @@
+{% block head %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<title>Tabla</title>
+{% endblock %}
+{% block body %}
+<div>
+    <p></p>
+    <input type="text" id="Cuenta" name="Cuenta" placeholder="Buscar cuenta..." onkeyup="filter()"> 
+    <button class="button button">Buscar</button>
+    <input type="text" id="Champs" name="Champ" placeholder="Filtar champs..." onkeyup="filter()"> 
+    <p>
+    <main>
+      <table id="myTable" class="table table-striped">
+        <thead>
+            <tr class="bg-info">
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Puntos</th>
+                <th>Maestria</th>
+                <th>Cofre</th>
+                <th>Roles</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for champ in dataMine %}
+            <tr>
+                <td>
+                    {{champ.id}}
+                </td>
+                <td>
+                    {{champ.nombre}}
+                </td>
+                <td>
+                    {{champ.points}}
+                </td>
+                <td>
+                    {{champ.mastery}}
+                </td>
+                <td>
+                    {{champ.chest}}
+                </td>
+                <td>
+                  {% for roles in champ.roles %}
+                    {{roles}}
+                  {% endfor %}
+              </td>
+              <td>
+                <a href="#" class="button">select</a>
+              </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </main>
+</div>
