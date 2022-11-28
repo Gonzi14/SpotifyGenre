@@ -238,8 +238,8 @@ def checkNumSongPlaylist():
             sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
             songs = songs + len(sp)
         allPlaylists.append({'id': playlist['id'], 'name': playlist['name'], 'songs' : songs})
-        print(playlist['name'] + " " + str(songs))
-    save(allPlaylists, "myPlaylists")
+        
+    save(allPlaylists, "static/myPlaylists")
 
 def checkNumSongartists():
     listArtists = []
