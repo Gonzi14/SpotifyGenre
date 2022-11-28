@@ -22,15 +22,15 @@ from refresh import refresh
 clientID = "43e2c4f5542f44ba99cff85ab3f149bb"
 secretID = "31f3f5e0444244bb9ddfff4d932e83e0"
 token = refresh()
-token2 = "BQDmjzrzJOQVCnp316Snq8wGNmmGAQg4Noe7Z8JpJZpyPv6tspRyckVu-uP37VMtxWIx_GM2Z5LtIn2-ZlzoW16i78LljIFSGB5dingfNO_mnFaFy45eFk2CVnlWNaVBbwPBh90yNp4sxOkIV1jCJj_i_ppa7vcAPiXfsqL-vRC_oIIPzg"
+token2 = "BQAVvpzJHh-ml8Z0Onwyedm37RApoff-rHzTMuIXovUxUHcDLj-DwTdo4kImbFAB0F9xm0YDc6dsYf0eYVdvUKcUXYzXbPyeiB7dOXI4Xrd9HIg1KKQ-y_AD3agbwJu-2HdHyuj3df3Y5iPALXhcVjKLDGgRxu6wibGP4BVSw2_8XGghxQ"
 genres = []
-rounds =ceil(int(sys.argv[1])/50)
+artists = []
+rounds =ceil(int(sys.argv[1])/50) + 1
 noGenrePlaylist = None
 
 def getCurrentTrack():
-    sp = spotipy.Spotify(auth="BQBtyg5V8FR8zYyIRYarJiYnSy9DJKNPH-C_OGwglXMaMGq8rmCVyx8FnKNxV_UciJSNkCN9_EaUNHwChaYfoQWm8eSQoUQSd_yEmgh7lmunZ250lBGHGVslTJPPq-3mwd_BqTV6uOfbjWhkqtgxCyWQTZ57H65bXyMuTnGG17M1Kk_dRMk8Yd4")
+    sp = spotipy.Spotify(auth="BQCIl6d8a7EWvNJhjf9ydtCmRO9HgJrTR-gxrBTXg6H3PRAbdFp3uE--o0BD77GG2dEbHGNTmpMdUtxtqOQxFtz9eCy7rscHrggtOm1wby7Gr4GfwONCMbDqACM_rHrLVPRgqteOPGnudxSMKiVMs-TyxGsqJtvfsiszrDpUMrTn7meqIQ")
     sp = sp.current_user_playing_track()
-    print(sp)
     return sp
 
 def save(item, name):
@@ -58,12 +58,18 @@ def cleanGenres(genres):
             allgenre.append(item)
     # Luego se agrega todos los generos a una lista
     cleanGenre = list(set(allgenre))
+    save(cleanGenre, "static/myGenres")
     return(cleanGenre)
 
 def getTracks(rounds):
     file = open('static/mySongs.json', encoding= "utf8")
     data = json.load(file)
     lenAlreadyKnownSongs = len(data)
+    lastSong= ""
+    try:
+        lastSong = data[0]['songID']
+    except:
+        pass
     songs = []
     newSongs = []
     eras = []
@@ -82,6 +88,10 @@ def getTracks(rounds):
             for song in range(len(sp)):
                 audioSong = audio(sp[song]['track']['id'])
                 num=num+1
+                if sp[song]['track']['id'] == lastSong:
+                    songs.extend(data)
+                    break
+                    
             # Por cada cancion que hay agrega el id de la misma, de su artista a una lista
             # Los generos que tiene ese artista y el año del disco
                 songs.append({"songName":  sp[song]['track']['name'],'artistName': sp[song]['track']['artists'][0]['name'],'songID': sp[song]['track']['id'], 'artistID': sp[song]['track']['artists'][0]['id'],
@@ -89,19 +99,28 @@ def getTracks(rounds):
                 # Luego con el len(), se consigue agarrar el anteultimo digitos del año (2) y se le suma 0, para asi quedar como una decada
                 'year': ((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0"
                 ,'disc': sp[song]['track']['album']['name'], 'popularity': sp[song]['track']['popularity'], 'genres': getGenreArtists(sp[song]['track']['artists'][0]['id']),'danceability': audioSong[0], 'energy': audioSong[1], 'key': audioSong[2], 'loudness': audioSong[3], 'speechiness': audioSong[4], 'acousticness': audioSong[5], 'instrumentalness': audioSong[6], 'liveness': audioSong[7], 'valence': audioSong[8], 'tempo': audioSong[9]})
-                eras.append(((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0")
-                print(str(num) + ": Procesando: " + sp[song]['track']['name'])
                 
+                eras.append(((sp[song]['track']['album']['release_date']).split("-")[0])[len(((sp[song]['track']['album']['release_date']).split("-")[0]))//2] + "0")
+                
+                artists.append(sp[song]['track']['artists'][0]['name'])
+                
+                print(str(num) + ": Procesando: " + sp[song]['track']['name'])
+
+            else:
+                continue
+            break
     
     addedSongs = len(songs) - lenAlreadyKnownSongs
     for g in range(addedSongs):
         newSongs.append(songs[g])
     createPlaylist(cleanGenres(genres))
-    createPlaylist(eras)
-    save(songs, "mySongs")
+    createPlaylist(cleanGenres(eras))
+    save(songs, "static/mySongs")
     addSongs(newSongs, noGenrePlaylist)
-    checkNumSongartists()
-    checkNumSongPlaylist()
+    checkNumSogartists(newSongs)
+    checkNumSongPlaylist(cleanGenres(genres))
+    checkNumSongPlaylist(cleanGenres(eras))
+    checkNumSongPlaylist(cleanGenres(artists))
     
    
 def createPlaylist(genres):
@@ -121,6 +140,8 @@ def createPlaylist(genres):
                     # Si lo es termina el while
                     foundIt = True
                     playlistAlreadyExisting = {'name': playlist['name'], 'id': playlist['id']}
+                    if playlistAlreadyExisting['name'] == "NoGenre":
+                        return playlistAlreadyExisting
                 else:
                     # Si no lo es, sigue pasando el while
                     pass
@@ -131,13 +152,11 @@ def createPlaylist(genres):
                 # Se guarda la informacion de la nueva creada playlist
                 playlistData.append({'id': sp['id'], 'name': sp['name']})
                 print("se hizo la playlist: " + sp['name'])
-                save(playlistData, "myPlaylists")
-                return sp
+                save(playlistData, "static/myPlaylists")
             else:
                 # Si se termino y se encontro, sigue con el siguiente genero
                 pass
-        return playlistAlreadyExisting
-    
+        
 
 def addSongs(songs, noGenrePlaylist):
     # Agrega canciones a las playlists
@@ -226,52 +245,77 @@ def createTopPlaylist():
         createPlaylist([namePlaylist])
         addSongs(lista, noGenrePlaylist)
 
-def checkNumSongPlaylist():
+def checkNumSongPlaylist(listGenres):
     # Averigua cuantas canciones hay en una playlist
-    allPlaylists = []
     file = open('static/myPlaylists.json', encoding= "utf8")
-    data = json.load(file)
-    for playlist in data:
-        songs = 0
-        for times in range(3):
-            sp = spotipy.Spotify(auth=token)
-            sp = sp.playlist_items(playlist['id'], limit= 100, offset= times * 100 )['items']
-            songs = songs + len(sp)
-        allPlaylists.append({'id': playlist['id'], 'name': playlist['name'], 'songs' : songs})
-        
-    save(allPlaylists, "static/myPlaylists")
-
-def checkNumSongartists():
-    listArtists = []
-    artistsNumSongs = []
-    file = open('static/mySongs.json', encoding= "utf8")
-    data = json.load(file)
-    for song in range(len(data)):
-        num = 0
-        artist = {'name': data[song]['artistName'], 'id': data[song]['artistID'],'numSongs': None}
-        if artist not in listArtists:
-            # Si el artista todavia no esta en la lista se lo agrega
-            listArtists.append(artist)
-            # Se agrega a la lista de nunmeros de canciones tambien
-            artistsNumSongs.append({'name': data[song]['artistName'], 'numSongs': 1})
-        else:
-            # Si el artista ya esta,entonces se le quiere decir qe hay una cancion adicional en la cual aparece
-            for alreadyIn in listArtists:
-                # Por cada cancion que ya esta en la lista de artistas
-                if alreadyIn == artist:
-                    # Si se encuentra una igualdad, se le agrega una cancion a ese artista
-                    artistsNumSongs[num]['numSongs'] = artistsNumSongs[num]['numSongs'] + 1
-                num = num + 1
+    playlists = json.load(file)
+    df = pd.read_json('static/myPlaylists.json')
+    df.to_csv()
     num = 0
-    for artist in listArtists:
-        #Por cada artista que hay, se le cambia el numero de canciones que tiene, por el correcto
-        artist['numSongs'] = artistsNumSongs[num]['numSongs']
+    for genre in listGenres:
+        # Por cada genero filtra la lista de playlists
         num = num + 1
+        filterDf = df[df["name"] == genre]
+        print(genre)
+        if filterDf.empty:
+            continue
+        
+        filterGenre = filterDf.to_json(orient='split')
+        data = json.loads(filterGenre)
+        print(str(data['data'][0][1]))
+        print(" ANTES: " + str(data['data'][0][2]))
+        songs = 0
+        for times in range(4):
+            # Se fija cuantas canciones tiene la playlist
+            sp = spotipy.Spotify(auth=token)
+            sp = sp.playlist_items(data['data'][0][0], limit= 100, offset= times * 100 )['items']
+            songs = songs + len(sp)
+            if songs < (100 * times) or songs < (100):
+                # Si tiene menos de 100 canciones, no lo va a repetir mas
+                break
+        for i in range(len(playlists)):
+            # Actualiza el numero de canciones
+            if playlists[i]['name'] == data['data'][0][1]:
+                print(" AHORA " + str(songs))
+                playlists[i]['songs'] = songs
+                break
+    save(playlists,"static/myPlaylists")
+    
+
+
+
+def getArtistImage(artistID):
+    sp = spotipy.Spotify(auth=token2)
+    sp = sp.artist(artistID)
+    return sp['images'][2]['url']
+
+def checkNumSogartists(newSongs):
+    file = open('static/myArtists.json', encoding= "utf8")
+    data = json.load(file)
+    newArtists = []
+    for song in range(len(newSongs)):
+        num = 0
+        artist = {'name': newSongs[song]['artistName'], 'id': newSongs[song]['artistID'], 'numSongs': 0}
+        foundIt = False
+        while foundIt == False: 
+            for alreadyInArtists in data:
+                if artist['id'] == alreadyInArtists['id']:
+                    alreadyInArtists['numSongs'] = alreadyInArtists['numSongs'] + 1
+                    newArtists.append(alreadyInArtists)
+                    foundIt = True
+                num = num + 1      
+            if foundIt== False:
+                # Si el artista todavia no esta en la lista se lo agrega
+                data.append(artist)
+                newArtists.append(artist)
+                # Se agrega a la lista de numeros de canciones tambien
+                foundIt = True
+    for artist in newArtists:
         if artist['numSongs'] >= 5:
-            # Si hay mas de 5 canciones, se le crea una playlist
             createPlaylist([artist['name']])
             searchSongs(artist['name'])
-    save(listArtists, "myArtists")
+    num = 0
+    save(data, "static/myArtists")
 
 def audio(id):
     # Averigua los datos sobre el audio de una cancion
@@ -315,10 +359,27 @@ def searchSongs(filter):
     data = json.load(file)
     for song in data:
         if filter == song['artistName']:
-            print(song['artistName'])
-            prueba(song, createPlaylist([filter]), 14)
+            prueba(song, searchPlaylist(filter), 14)
+
+def searchPlaylist(filter):
+    file = open('static/myPlaylists.json', encoding= "utf8")
+    data = json.load(file)
+    for playlist in data:
+        if filter == playlist['name']:
+            return playlist
+
+def csvTojson(csv, name):
+    csv_data = pd.read_csv(csv, sep = ",")
+    csv_data.to_json(name + ".json", orient = "records")
+    return csv_data
+    
+def jsonTocsv(name):
+    df = pd.read_json(name + ".json")
+    df.to_csv(name + ".csv")
+    return df
 
 getTracks(rounds)
 #bar()
 #createTopPlaylist()
 #getCurrentTrack()
+
